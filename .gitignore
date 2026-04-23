@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+dist-ssr/
+dist_flutter/
+build/
+bin/
+out/
+
+# Models & Binaries (Large Files)
+models/
+public/models/
+*.gguf
+*.bin
+*.onnx
+*.wasm
+
+# IDEs & System
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Flutter specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock

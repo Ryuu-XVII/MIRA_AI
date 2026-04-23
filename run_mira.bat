@@ -1,0 +1,6 @@
+@echo off
+echo [MIRA] Cleaning up old processes...
+taskkill /F /IM node.exe 2>nul
+echo [MIRA] Starting System Bridge and Frontend...
+echo [MIRA] Access the interface at http://localhost:5173
+npx concurrently "npm run bridge" "npm run dev"
