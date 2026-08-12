@@ -4,33 +4,15 @@ echo MIRA AI - Complete System Startup
 echo ========================================
 echo.
 
-REM Step 1: Check if Ollama is already running
-echo [1/3] Checking Ollama Service...
-netstat -ano | findstr ":11434" >nul 2>&1
+REM Step 1: Check if LM Studio Local Server is running
+echo [1/3] Checking LM Studio Local Server (Port 1234)...
+netstat -ano | findstr ":1234" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Ollama already running on port 11434
+    echo ✓ LM Studio Server running on port 1234
 ) else (
-    echo Starting Ollama Service...
-    where ollama >nul 2>&1
-    if %errorlevel% equ 0 (
-        start "Ollama Service" ollama serve
-        timeout /t 3 /nobreak >nul
-        echo ✓ Ollama started on port 11434
-    ) else (
-        if exist "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" (
-            start "Ollama Service" "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" serve
-            timeout /t 3 /nobreak >nul
-            echo ✓ Ollama started from local programs
-        ) else if exist "C:\Program Files\Ollama\ollama.exe" (
-            start "Ollama Service" "C:\Program Files\Ollama\ollama.exe" serve
-            timeout /t 3 /nobreak >nul
-            echo ✓ Ollama started from system programs
-        ) else (
-            echo ⚠ Ollama not found!
-            echo Please install Ollama or start it manually.
-            echo Continuing anyway - make sure Ollama is running...
-        )
-    )
+    echo ⚠ LM Studio Server not detected on port 1234!
+    echo Please launch LM Studio and ensure the Local Server is started.
+    echo Continuing anyway...
 )
 echo.
 
