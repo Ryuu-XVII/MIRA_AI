@@ -1,13 +1,13 @@
 # Mira AI
 
-Mira AI is an experimental desktop-style AI companion interface built with React, TypeScript, and Vite. It pairs a 3D-driven ambient HUD interface with a local Node.js bridge backend that routes requests to local LLMs (Ollama / Llama models) with automatic fallback capabilities.
+Mira AI is an experimental desktop-style AI companion interface built with React, TypeScript, and Vite. It pairs a 3D-driven ambient HUD interface with a local Node.js bridge backend that routes requests to local LLMs (LM Studio local server) with automatic fallback capabilities.
 
 ## 🚀 Key Features
 
 - **Futuristic 3D HUD & Terminal**: Ambient Three.js particle field with dynamic reactivity and bloom visual effects via `@react-three/fiber` and `@react-three/drei`.
-- **Local AI Brain & Fallback**: Dual-layer LLM backend bridge connecting to local Ollama instances (`qwen2.5-coder` / `llama3`) with fallback to local PS-Engine / Node Llama CPP routines.
+- **Local AI Brain & Fallback**: Dual-layer LLM backend bridge connecting to LM Studio local server endpoint with fallback to local PS-Engine / Node Llama CPP routines.
 - **Time-Aware Assistant & Voice Synthesis**: Dynamic time-of-day greetings and integrated speech synthesis (`VoiceService`) and speech recognition.
-- **One-Click Startup Script**: Cleaned batch launcher (`mira.bat`) that checks prerequisite services (Ollama), cleans orphan processes, and launches the application concurrently.
+- **One-Click Startup Script**: Cleaned batch launcher (`mira.bat`) that checks process cleanup and launches the application concurrently.
 - **State Management**: Powered by Zustand for responsive UI status updates and conversation context tracking.
 
 ## 🧰 Tech Stack
@@ -15,14 +15,14 @@ Mira AI is an experimental desktop-style AI companion interface built with React
 - **Frontend**: React 18, Vite, TypeScript, TailwindCSS
 - **Visuals & 3D**: Three.js, `@react-three/fiber`, `@react-three/drei`
 - **State**: Zustand
-- **Backend / Bridge**: Node.js, Express, CORS, `ollama`, `node-llama-cpp`
+- **Backend / Bridge**: Node.js, Express, CORS, LM Studio Local Server API (`http://localhost:1234`), `node-llama-cpp`
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js (v18+)
-- [Ollama](https://ollama.com/) (Optional but recommended for full local LLM inference)
+- [LM Studio](https://lmstudio.ai/) (Local Inference Server enabled on `http://localhost:1234`)
 
 ### Installation
 
@@ -34,7 +34,7 @@ npm install
 
 ### Running the App
 
-To launch the full system (Ollama check, process cleanup, frontend + bridge):
+To launch the full system (process cleanup, frontend + bridge):
 
 ```cmd
 .\mira.bat
@@ -88,4 +88,5 @@ npm run preview
 ## 📄 License
 
 MIT License
+
 
