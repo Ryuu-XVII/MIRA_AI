@@ -1,87 +1,91 @@
 # Mira AI
 
-Mira AI is an experimental desktop-style AI companion interface built with React, TypeScript, and Vite. It pairs a 3D-driven frontend with a local LLM bridge backend for native model inference, GPU-aware startup, and immersive visual feedback.
+Mira AI is an experimental desktop-style AI companion interface built with React, TypeScript, and Vite. It pairs a 3D-driven ambient HUD interface with a local Node.js bridge backend that routes requests to local LLMs (Ollama / Llama models) with automatic fallback capabilities.
 
-## 🚀 What this project is
+## 🚀 Key Features
 
-- A **Web-based AI assistant UI** with a futuristic HUD and chat terminal.
-- A **local model bridge** architecture using `node-llama-cpp` for native inference.
-- A **Three.js visual layer** with bloom and particle field effects via `@react-three/fiber`.
-- A **GPU detection and monitoring layer** for better local performance awareness.
-- Built with **Zustand** state management, modular services, and clean component composition.
+- **Futuristic 3D HUD & Terminal**: Ambient Three.js particle field with dynamic reactivity and bloom visual effects via `@react-three/fiber` and `@react-three/drei`.
+- **Local AI Brain & Fallback**: Dual-layer LLM backend bridge connecting to local Ollama instances (`qwen2.5-coder` / `llama3`) with fallback to local PS-Engine / Node Llama CPP routines.
+- **Time-Aware Assistant & Voice Synthesis**: Dynamic time-of-day greetings and integrated speech synthesis (`VoiceService`) and speech recognition.
+- **One-Click Startup Script**: Cleaned batch launcher (`mira.bat`) that checks prerequisite services (Ollama), cleans orphan processes, and launches the application concurrently.
+- **State Management**: Powered by Zustand for responsive UI status updates and conversation context tracking.
 
-## ⚡ Highlights
+## 🧰 Tech Stack
 
-- 3D ambient scene rendered in React with interactive camera control
-- AI brain initialization and model loading through a local bridge service
-- Streaming assistant messages displayed in a stylized terminal
-- Local analytics and diagnostics integrated at startup
-- Support for voice and multimodal flows through service scaffolding
+- **Frontend**: React 18, Vite, TypeScript, TailwindCSS
+- **Visuals & 3D**: Three.js, `@react-three/fiber`, `@react-three/drei`
+- **State**: Zustand
+- **Backend / Bridge**: Node.js, Express, CORS, `ollama`, `node-llama-cpp`
 
-## 🧰 Main technologies
+## 🚀 Quick Start
 
-- `react` / `react-dom`
-- `vite`
-- `typescript`
-- `three`, `@react-three/fiber`, `@react-three/drei`
-- `zustand`
-- `node-llama-cpp`
-- `express`, `cors`, `body-parser`
+### Prerequisites
 
-## 🚀 Development
+- Node.js (v18+)
+- [Ollama](https://ollama.com/) (Optional but recommended for full local LLM inference)
 
-Install dependencies:
+### Installation
+
+Install all frontend and bridge dependencies:
 
 ```bash
 npm install
 ```
 
-Run the local app and backend bridge together:
+### Running the App
+
+To launch the full system (Ollama check, process cleanup, frontend + bridge):
+
+```cmd
+.\mira.bat
+```
+
+Alternatively, run via npm:
 
 ```bash
 npm start
 ```
 
-If you want to run them separately:
+If you prefer running services in separate terminals:
 
 ```bash
-npm run dev
+# Terminal 1: Bridge Server (Port 3001)
 npm run bridge
+
+# Terminal 2: Vite Dev Server (Port 5173)
+npm run dev
 ```
 
-Build for production:
+### Production Build
+
+Build static artifacts:
 
 ```bash
 npm run build
 ```
 
-Preview the production build locally:
+Preview production build:
 
 ```bash
 npm run preview
 ```
 
-Lint the repository:
+## 🧭 Project Structure
 
-```bash
-npm run lint
 ```
-
-## 🧭 Project structure
-
-- `src/App.tsx` — main application layout and UI composition
-- `src/main.tsx` — app bootstrap, diagnostics, and cache cleanup
-- `src/state/useStore.ts` — global app state and message history
-- `src/services/brain/BrainService.ts` — local AI bridge orchestration and model control
-- `src/components/Overlay` — HUD, status panels, and control deck
-- `src/components/Visuals` — 3D particle scene and visual effects
-
-## 💡 Notes
-
-- This repo is built as a local prototype and currently runs in development mode with a local bridge backend.
-- `npm start` launches both the frontend and the model bridge concurrently.
-- The app uses a private package setup and is not configured for npm publishing.
+├── bridge/                # Local backend bridge server (mira-bridge.cjs)
+├── public/                # Static assets & 3D models
+├── src/
+│   ├── components/        # UI Overlays, HUD panels, and 3D Visuals
+│   ├── hooks/             # Custom React hooks (useMira.ts)
+│   ├── services/          # Brain, Voice, Memory, and Perception services
+│   ├── state/             # Zustand global state store
+│   └── App.tsx            # App container & main layout
+├── mira.bat               # Windows automated startup script
+└── README.md
+```
 
 ## 📄 License
 
-Add a license file or choose your preferred open source license for this project.
+MIT License
+

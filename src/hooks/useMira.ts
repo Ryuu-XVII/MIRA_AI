@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useStore } from '../state/useStore';
 import { brain } from '../services/brain/BrainService';
 import { voice } from '../services/voice/VoiceService';
-import { vision } from '../services/perception/VisionService';
 import { memory } from '../services/memory/MemoryService';
 
 let currentAbortController: AbortController | null = null;
@@ -33,31 +32,10 @@ export const useMira = () => {
             await memory.addFact(text, 'user');
         }, 0);
 
-        // 2. Smart Perception Context
-        const visionKeywords = ['see', 'look', 'find', 'view', 'watch', 'describe', 'camera', 'show', 'identify', 'what is this', 'who is this'];
-        const userAsksToSee = visionKeywords.some(kw => text.toLowerCase().includes(kw));
-
-        // Periodic vision sync (every 5 messages) or when asked
-        const messageCount = useStore.getState().messages.length;
-        const shouldCapture = userAsksToSee || (messageCount % 10 === 0);
-
-        const frame = shouldCapture ? vision.captureFrame() : null;
-        const visionContext = frame
-            ? "Sensors Active: Analyzing high-resolution frame."
-            : (userAsksToSee ? "Sensors Warm: User asked to see, but no frame captured yet." : vision.getDetailedDescription());
-
-        console.log("Brain Context:", { hasFrame: !!frame, userAsksToSee });
-
-        // 3. Construct Enrichment Block
-        const contextBlock = `
-[ENVIRONMENTAL DATA]
-Visual Analysis: ${visionContext || "Sensors clear."}
-`;
-
         try {
-            // 2. Start brain processing immediately with captured frame
+            // 2. Start brain processing directly
             let spokenLength = 0;
-            const richInput = `${contextBlock}\nUser Request: ${text}`;
+            const richInput = text;
 
             const response = await brain.processStreamingInput(
                 richInput,
@@ -92,7 +70,7 @@ Visual Analysis: ${visionContext || "Sensors clear."}
                         spokenLength += lastMatchIndex;
                     }
                 },
-                frame,
+                null,
                 currentAbortController.signal
             );
 
@@ -147,11 +125,7 @@ Visual Analysis: ${visionContext || "Sensors clear."}
             await memory.initialize();
             console.log("[MIRA-CORE] ✓ Memory Initialized");
 
-            console.log("[MIRA-CORE] Step 2: Requesting camera permissions...");
-            await vision.startCamera();
-            console.log("[MIRA-CORE] ✓ Camera started");
-
-            console.log("[MIRA-CORE] Step 3: Starting voice listening...");
+            console.log("[MIRA-CORE] Step 2: Starting voice listening...");
             await voice.startListening();
             console.log("[MIRA-CORE] ✓ Voice listening started");
 
@@ -161,15 +135,33 @@ Visual Analysis: ${visionContext || "Sensors clear."}
             console.log("[MIRA-CORE] Step 4: Setting status to listening...");
             actions.setStatus('listening');
             (window as any).electron?.sendState?.('status', 'listening');
-            console.log("[MIRA-CORE] ✓ Status set to listening");
+            console.log("[MIRA-CORE] ✓ Status set to listening...");
 
-            // --- AUTO GREETING (Since Electron onFaceReady is gone) ---
+            // Dynamic Time-Aware Greeting
             if (useStore.getState().messages.length === 0) {
-                const greeting = "Systems online. I am Mira. Identify yourself.";
-                console.log("[MIRA-CORE] Preparing greeting:", greeting);
-                actions.addMessage('assistant', greeting); // Show in UI
+                const hour = new Date().getHours();
+                const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+                const greetings = {
+                    morning: [
+                        "Good morning! Mira system online and ready.",
+                        "Morning! Systems online, how can I help you today?",
+                        "Good morning! Neural core active and listening."
+                    ],
+                    afternoon: [
+                        "Good afternoon! Mira online, ready for your commands.",
+                        "Hey there! Afternoon systems operational. What are we working on?",
+                        "Good afternoon! All neural networks primed and ready."
+                    ],
+                    evening: [
+                        "Good evening! Mira online and at your service.",
+                        "Evening! Systems active. What can I assist you with tonight?",
+                        "Good evening! All systems online, ready when you are."
+                    ]
+                };
+                const choices = greetings[timeOfDay];
+                const greeting = choices[Math.floor(Math.random() * choices.length)];
 
-                // Small delay to ensure AudioContext is fully resumed and UI is ready
+                actions.addMessage('assistant', greeting);
                 setTimeout(async () => {
                     await voice.speak(greeting);
                 }, 500);
@@ -216,19 +208,9 @@ Visual Analysis: ${visionContext || "Sensors clear."}
                         await voice.resumeAudio();
                         console.log("[MIRA-CORE] ✓ Audio context resumed");
 
-                        if (useStore.getState().messages.length === 0) {
-                            const greeting = "Systems online. I am Mira. Identify yourself.";
-                            console.log("[MIRA-CORE] Preparing greeting:", greeting);
-                            actions.addMessage('assistant', greeting);
-
-                            console.log("[MIRA-CORE] Speaking greeting...");
-                            await voice.speak(greeting);
-                            console.log("[MIRA-CORE] ✓ Greeting spoken");
-
-                            console.log("[MIRA-CORE] Starting voice listening...");
-                            voice.startListening();
-                            console.log("[MIRA-CORE] ✓ Voice listening started");
-                        }
+                        console.log("[MIRA-CORE] Starting voice listening...");
+                        voice.startListening();
+                        console.log("[MIRA-CORE] ✓ Voice listening started");
 
                         console.log("[MIRA-CORE] ========================================");
                         console.log("[MIRA-CORE] ✓✓✓ HANDSHAKE COMPLETE ✓✓✓");

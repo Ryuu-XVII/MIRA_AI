@@ -5,7 +5,12 @@ const fs = require('fs');
 const { KokoroTTS } = require('kokoro-js');
 
 const BRIDGE_PORT = 3002;
-const OLLAMA_PORT = 11434;
+const LM_STUDIO_PORT = process.env.LM_STUDIO_PORT || 1234;
+const OLLAMA_PORT = process.env.OLLAMA_PORT || 11434;
+
+// Determine active LLM server target (LM Studio default port: 1234)
+let ACTIVE_LLM_PORT = LM_STUDIO_PORT;
+let ACTIVE_LLM_NAME = "LM Studio";
 
 // Global State
 let modelLoaded = false;
@@ -24,7 +29,7 @@ async function initializeTTS() {
             device: "cpu"
         });
         // Pre-warm the engine by generating a tiny silent chunk
-        await kokoro.generate(".", { voice: 'af_bella', speed: 1.15 });
+        await kokoro.generate(".", { voice: 'af_bella', speed: 1.18 });
         log('Kokoro TTS Engine READY and WARMED.');
     } catch (err) {
         log(`TTS Init Error: ${err.message}`);
@@ -90,7 +95,7 @@ async function processTtsGeneration() {
     try {
         if (!kokoro) await initializeTTS();
 
-        const audio = await kokoro.generate(text, { voice: 'af_bella', speed: 1.15 });
+        const audio = await kokoro.generate(text, { voice: 'af_bella', speed: 1.18 });
 
         // V9: Trim silence to prevent gaps between segments
         const trimmedAudio = trimSilence(audio.audio);
@@ -178,19 +183,32 @@ function log(msg) {
 }
 
 async function initializeBrain() {
-    log('Ollama engine active. Ready to process vision requests.');
+    log(`Connecting to ${ACTIVE_LLM_NAME} on port ${ACTIVE_LLM_PORT}...`);
     modelLoaded = true;
     isModelLoading = false;
 }
 
 function checkServerHealth() {
-    http.get(`http://127.0.0.1:${OLLAMA_PORT}/api/tags`, (res) => {
+    // 1. First check LM Studio on port 1234
+    http.get(`http://127.0.0.1:${LM_STUDIO_PORT}/v1/models`, (res) => {
         if (res.statusCode === 200) {
             modelLoaded = true;
-            log('Ollama Health Check SUCCESS.');
+            ACTIVE_LLM_PORT = LM_STUDIO_PORT;
+            ACTIVE_LLM_NAME = "LM Studio";
+            log(`LM Studio Health Check SUCCESS (Port ${LM_STUDIO_PORT}).`);
         }
     }).on('error', () => {
-        log('Ollama not responding on port 11434.');
+        // 2. Fallback check Ollama on port 11434
+        http.get(`http://127.0.0.1:${OLLAMA_PORT}/api/tags`, (res) => {
+            if (res.statusCode === 200) {
+                modelLoaded = true;
+                ACTIVE_LLM_PORT = OLLAMA_PORT;
+                ACTIVE_LLM_NAME = "Ollama";
+                log(`Ollama Health Check SUCCESS (Port ${OLLAMA_PORT}).`);
+            }
+        }).on('error', () => {
+            log(`Neither LM Studio (port ${LM_STUDIO_PORT}) nor Ollama (port ${OLLAMA_PORT}) responded.`);
+        });
     });
 }
 
@@ -262,11 +280,6 @@ const server = http.createServer(async (req, res) => {
     if ((req.url === '/init-model' || req.url === '/initialize') && req.method === 'POST') {
         try {
             if (!modelLoaded) initializeBrain(); // Start in background
-
-            // Automated System Greeting
-            setTimeout(() => {
-                speakHost("Neural Link Established. Mira System Online. How can I assist you today?");
-            }, 500);
 
             res.writeHead(200);
             res.end(JSON.stringify({ status: 'initializing' }));
@@ -369,10 +382,10 @@ const server = http.createServer(async (req, res) => {
                 isFirstSegment = true; // New Response Start
 
                 const startTime = Date.now();
-                // Proxy to Ollama OpenAI-compatible API
+                // Proxy to OpenAI-compatible API (LM Studio / Ollama)
                 const proxyReq = http.request({
                     hostname: '127.0.0.1',
-                    port: OLLAMA_PORT,
+                    port: ACTIVE_LLM_PORT,
                     path: '/v1/chat/completions',
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
@@ -381,7 +394,7 @@ const server = http.createServer(async (req, res) => {
                         let errorData = '';
                         proxyRes.on('data', d => errorData += d);
                         proxyRes.on('end', () => {
-                            log(`Ollama Error (${proxyRes.statusCode}): ${errorData}`);
+                            log(`${ACTIVE_LLM_NAME} Error (${proxyRes.statusCode}): ${errorData}`);
                             res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
                             res.end(errorData);
                         });
@@ -413,8 +426,8 @@ const server = http.createServer(async (req, res) => {
 
                                     // Direct Voice Trigger Logic
                                     sentenceBuffer += content;
-                                    // V10 Prosody Trigger: 250 char safety ceiling
-                                    const triggerLimit = isFirstSegment ? 25 : 250;
+                                    // Immediate trigger: Start audio synthesis on first 12 chars
+                                    const triggerLimit = isFirstSegment ? 12 : 120;
                                     const match = sentenceBuffer.match(/[.!?\n]+(?=\s|$)/);
                                     const isBufferLarge = sentenceBuffer.length > triggerLimit;
 
@@ -448,7 +461,7 @@ const server = http.createServer(async (req, res) => {
                 });
 
                 proxyReq.on('error', (e) => {
-                    log(`Proxy Request Error: ${e.message}`);
+                    log(`Proxy Request Error (${ACTIVE_LLM_NAME}): ${e.message}`);
                     if (!res.headersSent) {
                         res.writeHead(500);
                         res.end(JSON.stringify({ error: e.message }));
@@ -459,7 +472,7 @@ const server = http.createServer(async (req, res) => {
 
                 // Log request summary (avoid logging full base64)
                 const hasImage = messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image_url'));
-                log(`Forwarding Chat Request. Multimodal: ${hasImage}`);
+                log(`Forwarding Chat Request to ${ACTIVE_LLM_NAME} (Port ${ACTIVE_LLM_PORT}). Multimodal: ${hasImage}`);
 
                 // Ensure "Mira" Identity is enforced
                 const systemPrompt = {
@@ -471,25 +484,14 @@ const server = http.createServer(async (req, res) => {
                 const cleanedMessages = messages.filter(m => m.role !== 'system');
                 const finalMessages = [systemPrompt, ...cleanedMessages];
 
-                // Hyper-Tuned 11B Vision Architecture: Persistent intelligence with zero swapping lag
                 const isMultimodal = finalMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image_url'));
-                const targetModel = "llama3.2-vision";
-
-                log(`Forwarding Chat Request. Model: ${targetModel} (Multimodal: ${isMultimodal})`);
 
                 const outgoingPayload = JSON.stringify({
-                    model: targetModel,
+                    model: ACTIVE_LLM_PORT === OLLAMA_PORT ? "llama3.2-vision" : "local-model",
                     messages: finalMessages,
                     stream: true,
                     temperature: 0.5,
-                    max_tokens: isMultimodal ? 80 : 250,
-                    options: {
-                        num_ctx: 1024,
-                        f16_kv: true,
-                        num_thread: 6, // V10 Balanced: Substantial headroom for prosody-aware TTS
-                        repeat_penalty: 1.1,
-                        num_gpu: -1 // Full GPU acceleration
-                    }
+                    max_tokens: isMultimodal ? 80 : 250
                 });
 
                 proxyReq.write(outgoingPayload);

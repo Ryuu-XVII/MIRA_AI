@@ -40,18 +40,19 @@ taskkill /F /IM node.exe >nul 2>&1
 echo ✓ Cleanup complete
 echo.
 
-REM Step 3: Start Mira Bridge and Flutter UI
-echo [3/3] Starting Mira Bridge and Native UI...
-echo ✓ Bridge and Dashboard will start on port 3002
+REM Step 3: Start Mira Bridge and React UI
+echo [3/3] Starting Mira Bridge and React UI...
+echo ✓ React UI will be available at http://localhost:5173
+echo ✓ Bridge Server listening at http://localhost:3002
 echo.
 echo ========================================
 echo MIRA SYSTEM ONLINE
-echo Access at: http://localhost:3002
+echo Access at: http://localhost:5173
 echo ========================================
 echo.
 
-REM Open Browser to Flutter UI
-start http://localhost:3002
+REM Wait a moment for Vite server to start, then open browser
+start "" cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:5173"
 
-REM Start the bridge in the foreground to keep the window alive
-npm run bridge
+REM Start bridge and Vite frontend concurrently
+npm start

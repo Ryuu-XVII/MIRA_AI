@@ -1,24 +1,19 @@
-# 🏁 Mira AI: Final Launch Steps
+# 🏁 Mira AI: Launch Guide
 
-While your Visual Studio installation finishes, I've upgraded the UI to be even more futuristic!
+The application is built completely with React, TypeScript, Vite, and Three.js (React Three Fiber).
 
-### 1. The "Neural Core" Upgrade
-I've implemented a central pulsing "Neural Orb" in the Flutter interface that changes color based on Mira's state:
-- **Amber**: Mira is idle and listening.
-- **Cyan**: Mira is "thinking" and processing your request.
+### 1. Neural Core & HUD
+The UI features a futuristic desktop interface:
+- **Particle Field / Neural Core**: Renders ambient 3D visual effects using `@react-three/fiber` and `@react-three/postprocessing`.
+- **System Monitor & Control Deck**: Real-time telemetry, memory buffer indicators, and control shortcuts.
+- **Neural Feed Stream**: Real-time streaming assistant feed and interactive prompt terminal.
 
-### 2. What to do when the Installer finishes:
-Once Visual Studio says "Installation complete" (and you've restarted your computer if it asked):
+### 2. Running Mira AI:
+Run the following command from the project root:
 
-1.  **Open Developer Mode**:
-    - Go to **Settings > System > For Developers**.
-    - Toggle **Developer Mode** to **On**. (Very important for Flutter).
-2.  **Run Mira**:
-    - Open your terminal in `C:\Users\adnaa\.gemini\antigravity\scratch\mira_ai\`.
-    - Run the command: `.\run_mira.bat`
+```bash
+npm start
+```
 
-### 3. What will happen:
-- A window titled **"Mira Backend"** will open. You can minimize this; it's the AI engine.
-- A beautiful, transparent **"Mira AI"** window will appear with the particle field and neural core.
+This launches both the local LLM bridge server and the React frontend concurrently.
 
-**I am ready and waiting for your first interaction with the new desktop version!**
